@@ -19,7 +19,7 @@ public:
     {
         vertices = _vertices;
         points = new Point *[vertices];
-        for (size_t index = 0; index < vertices; ++index)
+        for (int index = 0; index < vertices; ++index)
         {
             points[index] = new Point();
         }
@@ -37,7 +37,7 @@ public:
         }
     }
 
-    double *area()
+    double area()
     {
         int temp = 0;
         for (int i = 0; i < vertices; i++)
@@ -46,10 +46,10 @@ public:
             //        use one to fix lhs and the other to fix rhs
             int lhs = (points[i]->x) * (points[i]->y);
             int rhs = (points[i]->x) * (points[i]->y);
-            temp += (lhs - rhs);
+            temp += (lhs + rhs);
         }
         double area = abs(temp) / 2.0;
-        return &area;
+        return area;
     }
 };
 
