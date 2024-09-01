@@ -15,6 +15,7 @@ class Shape
     Point **points;
 
 public:
+    // Most of the for loops had incorect parameters.
     Shape(int _vertices)
     {
         vertices = _vertices;
@@ -27,6 +28,11 @@ public:
 
     ~Shape()
     {
+        for (int i = 0; i < vertices; i++)
+        {
+            delete points[i];
+        }
+        delete[] points;
     }
 
     void addPoints(/* formal parameter for unsized array called pts */ Point pts[])
@@ -39,6 +45,8 @@ public:
 
     double area()
     {
+
+        // The thing that needed fixing was the base arithmetic and the call to pointers
         int temp = 0;
         for (int i = 0; i < vertices; i++)
         {
@@ -55,6 +63,8 @@ public:
 
 int main()
 {
+    // Inorder to solve the memmory leaks the destructors needed to be called.
+
     // FIXME: create the following points using the three different methods
     //        of defining structs:
     //          tri1 = (0, 0)
@@ -89,4 +99,9 @@ int main()
     // FIXME: print out area of tri and area of quad
     std::cout << tri->area() << std::endl
               << quad->area() << std::endl;
+
+    // tri->~Shape();
+    // quad->~Shape();
+    delete tri;
+    delete quad;
 }
