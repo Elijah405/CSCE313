@@ -17,4 +17,6 @@ openat(AT_FDCWD, "/proc/self/maps", O_RDONLY) = 3
 openat(AT_FDCWD, "/proc/self/maps", O_RDONLY) = 3
 openat(AT_FDCWD, "fifo_control1", O_RDONLY) = 3
 openat(AT_FDCWD, "fifo_control2", O_WRONLY) = 4
-+++ exited with 1 +++
+openat(AT_FDCWD, "fifo_1", O_RDONLY)    = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+--- SIGINT {si_signo=SIGINT, si_code=SI_KERNEL} ---
++++ killed by SIGINT +++

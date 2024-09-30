@@ -26,6 +26,7 @@ int main(int argc, char *argv[])
 	int m2 = MAX_MESSAGE;
 	string filename = "";
 	bool new_chan = false;
+	vector<FIFORequestChannel *> channels;
 
 	// Add other arguments here
 	while ((opt = getopt(argc, argv, "p:t:e:f:m:c")) != -1)
@@ -70,15 +71,22 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	FIFORequestChannel chan("control", FIFORequestChannel::CLIENT_SIDE);
+	FIFORequestChannel chans("control", FIFORequestChannel::CLIENT_SIDE);
+	channels.push_back(&chans);
 
 	// Task 4:
 	// Request a new channel
 	if (new_chan)
 	{
 		MESSAGE_TYPE newChanel = NEWCHANNEL_MSG;
-		chan.cwrite(&newChanel, sizeof(MESSAGE_TYPE));
+		chans.cwrite(&newChanel, sizeof(MESSAGE_TYPE));
+		string nameOfNew;
+		chans.cread(&nameOfNew, sizeof(string));
+		FIFORequestChannel *sisterChannel = new FIFORequestChannel(nameOfNew, FIFORequestChannel::CLIENT_SIDE);
+		channels.push_back(sisterChannel);
 	}
+
+	FIFORequestChannel chan = *(channels.back());
 
 	// Task 2:
 	// Request data points
@@ -157,7 +165,7 @@ int main(int argc, char *argv[])
 		int loopSize = 0;
 		if (file_length % m2 != 0)
 		{
-			loopSize = file_length / m2 + 0;
+			loopSize = file_length / m2 + 1;
 		}
 		else
 		{
@@ -177,8 +185,9 @@ int main(int argc, char *argv[])
 			file_request->length = (m2 < remainder) ? m2 : remainder;
 
 			chan.cwrite(buf2, len);
+			int buffSize = (m2 < remainder) ? m2 : remainder;
 
-			chan.cread(&bufResponse, (m2 < remainder) ? m2 : remainder);
+			chan.cread(bufResponse, buffSize);
 			outfile.write(bufResponse, (m2 < remainder) ? m2 : remainder);
 		}
 		outfile.close();
@@ -187,6 +196,16 @@ int main(int argc, char *argv[])
 		delete[] bufResponse;
 
 		// cout << "The length of " << fname << " is " << file_length << endl;
+	}
+
+	if (new_chan)
+	{
+		for (auto chans : channels)
+		{
+			delete chans;
+		}
+		MESSAGE_TYPE m = QUIT_MSG;
+		chan.cwrite(&m, sizeof(MESSAGE_TYPE));
 	}
 
 	// Task 5:
