@@ -25,9 +25,10 @@ int main(int argc, char *argv[])
 	int e = -1;
 	int m2 = MAX_MESSAGE;
 	string filename = "";
+	bool new_chan = false;
 
 	// Add other arguments here
-	while ((opt = getopt(argc, argv, "p:t:e:f:m:")) != -1)
+	while ((opt = getopt(argc, argv, "p:t:e:f:m:c")) != -1)
 	{
 		switch (opt)
 		{
@@ -45,6 +46,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'm':
 			m2 = atoi(optarg);
+			break;
+		case 'c':
+			new_chan = true;
 			break;
 		}
 	}
@@ -70,6 +74,11 @@ int main(int argc, char *argv[])
 
 	// Task 4:
 	// Request a new channel
+	if (new_chan)
+	{
+		MESSAGE_TYPE newChanel = NEWCHANNEL_MSG;
+		chan.cwrite(&newChanel, sizeof(MESSAGE_TYPE));
+	}
 
 	// Task 2:
 	// Request data points
@@ -105,14 +114,14 @@ int main(int argc, char *argv[])
 
 			outfile << i * 0.004 << "," << reply << ",";
 
-			char buf2[MAX_MESSAGE];
-			datamsg x2(p, (i * 0.004), 2);
-			memcpy(buf2, &x2, sizeof(datamsg));
-			chan.cwrite(buf2, sizeof(datamsg));
-			double reply2;
-			chan.cread(&reply2, sizeof(double));
+			char buf3[MAX_MESSAGE];
+			datamsg x3(p, (i * 0.004), 2);
+			memcpy(buf3, &x3, sizeof(datamsg));
+			chan.cwrite(buf3, sizeof(datamsg));
+			double reply3;
+			chan.cread(&reply3, sizeof(double));
 
-			outfile << reply2 << endl;
+			outfile << reply3 << endl;
 			// cout << "For person " << p << ", at time " << t << ", the value of ecg " << e << " is " << reply << endl;
 		}
 		outfile.close();
@@ -120,19 +129,65 @@ int main(int argc, char *argv[])
 
 	// Task 3:
 	// Request files
-	filemsg fm(0, 0);
-	string fname = "1.csv";
+	if (!(filename == ""))
+	{
+		string path = "/home/elijahorozco405/CSCE313/PAs/PA1/received/";
+		ofstream outfile(path + filename);
+		if (!outfile.is_open())
+		{
+			std::cerr << "Error opening file!" << std::endl;
+			return 1;
+		}
 
-	int len = sizeof(filemsg) + (fname.size() + 1);
-	char *buf2 = new char[len];
-	memcpy(buf2, &fm, sizeof(filemsg));
-	strcpy(buf2 + sizeof(filemsg), fname.c_str());
-	chan.cwrite(buf2, len);
+		filemsg fm(0, 0);
+		string fname = filename;
 
-	delete[] buf2;
-	__int64_t file_length;
-	chan.cread(&file_length, sizeof(__int64_t));
-	cout << "The length of " << fname << " is " << file_length << endl;
+		int len = sizeof(filemsg) + (fname.size() + 1);
+		char *buf2 = new char[len];
+		memcpy(buf2, &fm, sizeof(filemsg));
+		strcpy(buf2 + sizeof(filemsg), fname.c_str());
+		chan.cwrite(buf2, len);
+
+		__int64_t file_length;
+		chan.cread(&file_length, sizeof(__int64_t));
+
+		char *bufResponse = new char[m2];
+
+		// loop file size/buffer capacity
+		int loopSize = 0;
+		if (file_length % m2 != 0)
+		{
+			loopSize = file_length / m2 + 0;
+		}
+		else
+		{
+			loopSize = file_length / m2;
+		}
+
+		// loop to get data
+		for (int index = 0; index < loopSize; index++)
+		{
+
+			int off = m2 * index;
+			int remainder = file_length - m2 * index;
+
+			filemsg *file_request = (filemsg *)buf2;
+			file_request->offset = off;
+
+			file_request->length = (m2 < remainder) ? m2 : remainder;
+
+			chan.cwrite(buf2, len);
+
+			chan.cread(&bufResponse, (m2 < remainder) ? m2 : remainder);
+			outfile.write(bufResponse, (m2 < remainder) ? m2 : remainder);
+		}
+		outfile.close();
+
+		delete[] buf2;
+		delete[] bufResponse;
+
+		// cout << "The length of " << fname << " is " << file_length << endl;
+	}
 
 	// Task 5:
 	//  Closing all the channels
