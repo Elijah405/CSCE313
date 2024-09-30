@@ -80,8 +80,8 @@ int main(int argc, char *argv[])
 	{
 		MESSAGE_TYPE newChanel = NEWCHANNEL_MSG;
 		chans.cwrite(&newChanel, sizeof(MESSAGE_TYPE));
-		string nameOfNew;
-		chans.cread(&nameOfNew, sizeof(string));
+		char nameOfNew[1024];
+		chans.cread(nameOfNew, sizeof(nameOfNew));
 		FIFORequestChannel *sisterChannel = new FIFORequestChannel(nameOfNew, FIFORequestChannel::CLIENT_SIDE);
 		channels.push_back(sisterChannel);
 	}
@@ -200,12 +200,10 @@ int main(int argc, char *argv[])
 
 	if (new_chan)
 	{
-		for (auto chans : channels)
-		{
-			delete chans;
-		}
 		MESSAGE_TYPE m = QUIT_MSG;
 		chan.cwrite(&m, sizeof(MESSAGE_TYPE));
+		delete channels.back();
+		chan = *(channels.front());
 	}
 
 	// Task 5:
