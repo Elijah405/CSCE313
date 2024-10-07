@@ -6,11 +6,11 @@ void t_init()
     // TODO
     for (int index = 0; index < NUM_CTX; index++)
     {
-        struct worker_context *contex = (struct worker_context *)malloc(sizeof(struct worker_context));
-        memset(contex, 0, sizeof(struct worker_context));
+        struct worker_context contex; // = (struct worker_context *)malloc( sizeof(struct worker_context));
+        // memset(contex, 0, sizeof(struct worker_context));
 
-        contex->state = INVALID;
-        contexts[index] = *contex;
+        contex.state = INVALID;
+        contexts[index] = contex;
     }
 
     contexts[0].state = VALID;
@@ -19,12 +19,13 @@ void t_init()
 
 int32_t t_create(fptr foo, int32_t arg1, int32_t arg2)
 {
-    // TODO
-    // code that determines the next available
+    // ontexts[current_context_idx].state = VALID;
+    //  TODO
+    //  code that determines the next available
     volatile uint8_t availableContex;
     for (volatile uint8_t index = 0; index < NUM_CTX; index++)
     {
-        if (contexts[index].state == INVALID) // && index != current_context_idx)
+        if (contexts[index].state == INVALID && index != current_context_idx)
         {
             availableContex = index;
             break;
@@ -59,7 +60,7 @@ int32_t t_yield()
     // updating the current context
     // getcontext(&contexts[current_context_idx].context);
     volatile uint8_t availableContex;
-    volatile uint8_t temp;
+
     // gets next available contex
     for (volatile uint8_t index = 0; index < NUM_CTX; index++)
     {
@@ -77,15 +78,18 @@ int32_t t_yield()
     {
         return 1;
     }
-    // swapcontext
+    volatile uint8_t temp;
+    //  swapcontext
     temp = current_context_idx;
     current_context_idx = availableContex;
-    printf("Current avaiable %d \n", availableContex);
-    printf("Current Context %d \n", temp);
+    // printf("Current avaiable %d \n", availableContex);
+    // printf("Current Context %d \n", temp);
     swapcontext(&contexts[temp].context, &contexts[availableContex].context);
 
-    // printf("Current Context %d \n", current_context_idx);
+    // swapcontext(&contexts[current_context_idx].context, &contexts[availableContex].context);
     // current_context_idx = availableContex;
+    // printf("Current Context %d \n", current_context_idx);
+
     //    count the number of avaiable context
     int32_t count = -1;
     // cycles through the context and updates them
@@ -97,17 +101,19 @@ int32_t t_yield()
         }
     }
 
-    printf("Current count %d \n", count);
+    // printf("Current count %d \n", count);
     return count;
 }
 
 void t_finish()
 {
     // TODO
+
     free(contexts[current_context_idx].context.uc_stack.ss_sp);
-    memset(&contexts[current_context_idx], 0, sizeof(struct worker_context));
+    // printf("freed the context %d \n", current_context_idx);
+
     contexts[current_context_idx].state = DONE;
+
     // printf("Process is free and done \n");
     t_yield();
-    // free(&contexts[0]);
 }
